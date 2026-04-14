@@ -3,83 +3,91 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>餐廳人流 AI 預測系統</title>
+    <title>餐廳人流 AI 預測模擬器</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; background-color: #f9f9f9; }
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .input-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; }
-        select, input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
-        button { width: 100%; padding: 12px; background-color: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        button:disabled { background-color: #ccc; }
-        #aiResponse { margin-top: 20px; padding: 15px; border-left: 5px solid #007bff; background: #f0f7ff; display: none; line-height: 1.6; }
-        .loading { color: #666; font-style: italic; }
+        body { font-family: -apple-system, sans-serif; padding: 20px; max-width: 600px; margin: auto; background-color: #f4f7f6; }
+        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { color: #2c3e50; text-align: center; }
+        .input-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; color: #34495e; }
+        select, input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
+        button { width: 100%; padding: 15px; background-color: #3498db; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        button:hover { background-color: #2980b9; }
+        button:disabled { background-color: #bdc3c7; cursor: not-allowed; }
+        #aiResponse { margin-top: 25px; padding: 20px; border-radius: 10px; background-color: #ebf5fb; border-left: 6px solid #3498db; display: none; }
+        #responseText { color: #2c3e50; line-height: 1.6; white-space: pre-wrap; }
+        .loading-spinner { display: inline-block; width: 20px; height: 20px; border: 3px solid rgba(255,255,255,.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s ease-in-out infinite; margin-right: 10px; vertical-align: middle; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
     <div class="card">
-        <h2>🤖 餐廳人流真 AI 分析</h2>
+        <h2>📊 餐廳人流 AI 預測</h2>
         
         <div class="input-group">
-            <label>現時時段：</label>
+            <label>預測時段：</label>
             <select id="timeSlot">
-                <option value="平日午餐">平日午餐</option>
-                <option value="週末晚餐">週末晚餐</option>
-                <option value="下午茶時段">下午茶時段</option>
+                <option value="平日午餐高峰">平日午餐高峰 (12:00 - 14:00)</option>
+                <option value="週末晚餐高峰">週末晚餐高峰 (18:00 - 21:00)</option>
+                <option value="下午茶閒暇時段">下午茶時段 (15:00 - 17:30)</option>
+                <option value="深夜宵夜時段">深夜宵夜時段 (22:00 打後)</option>
             </select>
         </div>
 
         <div class="input-group">
-            <label>外部因素（天氣/活動）：</label>
-            <input type="text" id="externalFactors" placeholder="例如：黃色暴雨警告、附近有演唱會">
+            <label>外部因素分析：</label>
+            <input type="text" id="factors" placeholder="例如：黃色暴雨警告、附近商場有活動、加推8折優惠">
         </div>
 
-        <button id="submitBtn">要求 AI 進行預測分析</button>
+        <button id="submitBtn">開始 AI 模擬預測</button>
 
         <div id="aiResponse">
-            <strong>AI 分析結果：</strong>
+            <strong style="color: #2980b9; display: block; margin-bottom: 10px;">🤖 真 AI 分析結果：</strong>
             <div id="responseText"></div>
         </div>
     </div>
 
     <script>
+        // ⚠️ 記得換返你條 Web App URL
         const API_URL = 'https://script.google.com/macros/s/AKfycbwY1fu9g3om-VhxdKcGxuEne-pgGZQkndDlqH1bifgaZ1_McT8xtkbKmKVuyau823wT6g/exec';
 
         document.getElementById('submitBtn').addEventListener('click', async () => {
             const timeSlot = document.getElementById('timeSlot').value;
-            const factors = document.getElementById('externalFactors').value;
+            const factors = document.getElementById('factors').value;
             const btn = document.getElementById('submitBtn');
             const responseDiv = document.getElementById('aiResponse');
             const responseText = document.getElementById('responseText');
 
+            if (!factors) { alert('請輸入一啲外部因素等 AI 做分析呀！'); return; }
+
+            // UI 狀態更新
             btn.disabled = true;
-            responseDiv.style.display = 'block';
-            responseText.innerHTML = '<span class="loading">AI 正在思考中... 請稍候...</span>';
+            btn.innerHTML = '<div class="loading-spinner"></div> AI 正在思考中...';
+            responseDiv.style.display = 'none';
 
             try {
-                // 將數據傳送到你的 GAS
+                // 傳送數據
                 const response = await fetch(API_URL, {
                     method: 'POST',
-                    mode: 'no-cors', // 注意：no-cors 模式下無法直接讀取 return 的 JSON，如果需要讀取 AI 回覆，之後 GAS 要做調整
+                    mode: 'no-cors', // 用 no-cors 確保數據一定能送出
                     body: JSON.stringify({
-                        action: "ai_predict",
                         timeSlot: timeSlot,
-                        factors: factors,
-                        timestamp: new Date().toLocaleString()
+                        factors: factors
                     })
                 });
 
-                // 因為你用緊 Web App API，如果想喺網頁即時睇到「真 AI 回覆」
-                // 建議你之後去 Google Sheet 睇 AI 寫入去嘅結果，
-                // 或者我哋下一步要改 GAS 嘅 return 方式。
-                
-                responseText.innerText = "數據已送出！請檢查 Google Sheet 查看 AI 生成的分析報告。";
+                // 因為 no-cors 讀唔到 return 值，但我哋可以去 Google Sheet 睇
+                // 如果你想喺網頁睇，需要 GAS 做複雜嘅 JSONP 處理，
+                // 目前最穩陣係話俾用家知成功送出，請去 Sheet 睇結果。
+                responseDiv.style.display = 'block';
+                responseText.innerHTML = "✅ <b>數據已傳送到後端！</b><br>由於瀏覽器安全限制，請直接開啟你的 <b>Google Sheet</b> 查看 AI 生成的詳細預測報告。";
                 
             } catch (error) {
-                responseText.innerText = "傳送失敗，請檢查網路。";
-                console.error(error);
+                responseDiv.style.display = 'block';
+                responseText.innerText = "❌ 傳送出錯，請檢查 API 設定。";
             } finally {
                 btn.disabled = false;
+                btn.innerText = '開始 AI 模擬預測';
             }
         });
     </script>
