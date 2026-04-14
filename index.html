@@ -1,92 +1,77 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>原作養生湯米線 | AI 決策系統</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>米線數據紀錄</title>
     <style>
-        :root { --brand: #1B4D3E; --gold: #D4AF37; --bg: #F4F4F7; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; color: #333; }
-        .card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
-        .header { background: var(--brand); color: white; padding: 25px; border-radius: 20px; text-align: center; margin-bottom: 15px; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        label { font-size: 12px; color: #666; font-weight: bold; margin-bottom: 5px; display: block; }
-        input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; }
-        button { background: var(--brand); color: white; border: none; padding: 15px; border-radius: 12px; width: 100%; font-weight: bold; margin-top: 15px; cursor: pointer; font-size: 16px; }
-        #aiAns { background: #fdf6e3; padding: 15px; border-radius: 12px; border-left: 5px solid var(--gold); margin-top: 15px; line-height: 1.8; font-size: 14px; min-height: 40px; }
-        .key-btn { font-size: 10px; color: #ccc; text-align: right; margin-top: 20px; cursor: pointer; }
+        body { font-family: sans-serif; padding: 20px; max-width: 500px; margin: auto; }
+        .input-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; }
+        input { width: 100%; padding: 8px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background-color: #28a745; color: white; border: none; cursor: pointer; }
+        button:disabled { background-color: #ccc; }
+        #status { margin-top: 15px; padding: 10px; display: none; }
     </style>
 </head>
 <body>
-
-<div class="header">
-    <h1 style="margin:0; font-size:22px;">原作養生湯米線</h1>
-    <p style="margin:5px 0 0; font-size:14px; opacity:0.8;">專業 AI 營運管理系統</p>
-</div>
-
-<div class="card">
-    <div class="grid">
-        <div><label>堂食單數</label><input type="number" id="dine" value="80"></div>
-        <div><label>KeeTa 單數</label><input type="number" id="kt" value="78"></div>
-        <div><label>Foodpanda</label><input type="number" id="fp" value="66"></div>
-        <div><label>人均消費 ($)</label><input type="number" id="avg" value="75"></div>
+    <h2>米線數據傳送</h2>
+    
+    <div class="input-group">
+        <label for="shopName">店名：</label>
+        <input type="text" id="shopName" placeholder="例如：譚仔">
     </div>
-</div>
+    
+    <div class="input-group">
+        <label for="price">價錢：</label>
+        <input type="number" id="price" placeholder="例如：55">
+    </div>
 
-<div class="card">
-    <div style="font-weight:bold; margin-bottom:12px;">🤖 Grok AI 即時諮詢</div>
-    <input type="text" id="q" placeholder="例如：今日要備幾多升金黃雞湯？">
-    <button onclick="ask()">獲取 AI 實時分析</button>
-    <div id="aiAns">請先設定 API Key 並輸入數據。</div>
-    <div class="key-btn" onclick="setKey()">⚙️ 設定 X.AI API Key</div>
-</div>
+    <button id="submitBtn">傳送到 Google Sheet</button>
+    <div id="status"></div>
 
-<script>
-    let myKey = localStorage.getItem('xai_key') || "";
+    <script>
+        // 呢度已經更新咗你提供嘅新 URL
+        const API_URL = 'https://script.google.com/macros/s/AKfycbwY1fu9g3om-VhxdKcGxuEne-pgGZQkndDlqH1bifgaZ1_McT8xtkbKmKVuyau823wT6g/exec';
 
-    function setKey() {
-        let k = prompt("請貼入 xqi- 開頭的 API Key:", myKey);
-        if(k) { localStorage.setItem('xai_key', k.trim()); myKey = k.trim(); alert("Key 已儲存！"); }
-    }
+        document.getElementById('submitBtn').addEventListener('click', async () => {
+            const shopName = document.getElementById('shopName').value;
+            const price = document.getElementById('price').value;
+            const statusDiv = document.getElementById('status');
+            const btn = document.getElementById('submitBtn');
 
-    async function ask() {
-        const ans = document.getElementById('aiAns');
-        if(!myKey) { ans.innerHTML = "請先設定 Key！"; return; }
-        
-        const d = document.getElementById('dine').value;
-        const k = document.getElementById('kt').value;
-        const f = document.getElementById('fp').value;
-        const total = parseInt(d) + parseInt(k) + parseInt(f);
-        const query = document.getElementById('q').value || "分析營運。";
+            if (!shopName || !price) {
+                alert('請填寫完整數據');
+                return;
+            }
 
-        ans.innerHTML = "AI 思考中...";
+            btn.disabled = true;
+            statusDiv.style.display = 'block';
+            statusDiv.innerText = '傳送中...';
+            statusDiv.style.backgroundColor = '#fff3cd';
 
-        try {
-            // 注意：如果 GitHub Pages 都唔得，就係 Key 餘額問題或需要中轉站
-            const res = await fetch("https://script.google.com/macros/s/AKfycbwY1fu9g3om-VhxdKcGxuEne-pgGZQkndDlqH1bifgaZ1_McT8xtkbKmKVuyau823wT6g/exec", {
-                method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${myKey}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    model: "grok-beta",
-                    messages: [
-                        { role: "system", content: "你係原作養生湯米線營運專家。請用廣東話回答。湯底計算按0.45L/碗。" },
-                        { role: "user", content: `今日數據：堂食${d}, KeeTa${k}, FP${f}。問題：${query}` }
-                    ]
-                })
-            });
+            try {
+                // 使用 no-cors 模式解決跨網域問題
+                await fetch(API_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    cache: 'no-cache',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ shopName, price, timestamp: new Date().toLocaleString() })
+                });
 
-            const data = await res.json();
-            if(data.error) throw new Error(data.error.message);
-            ans.innerHTML = data.choices[0].message.content.replace(/\n/g, '<br>');
-        } catch (e) {
-            ans.innerHTML = "<span style='color:red;'>連線失敗：" + e.message + "</span><br><small>建議：請確認 X.AI 帳戶已儲值，或嘗試將此檔案上傳至網頁空間運行。</small>";
-        }
-    }
-</script>
-
+                statusDiv.innerText = '傳送成功！(請檢查 Google Sheet)';
+                statusDiv.style.backgroundColor = '#d4edda';
+                document.getElementById('shopName').value = '';
+                document.getElementById('price').value = '';
+            } catch (error) {
+                statusDiv.innerText = '傳送出錯，請檢查設定。';
+                statusDiv.style.backgroundColor = '#f8d7da';
+                console.error(error);
+            } finally {
+                btn.disabled = false;
+            }
+        });
+    </script>
 </body>
 </html>
