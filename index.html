@@ -3,35 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>米線數據紀錄</title>
+    <title>米線數據紀錄系統</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; max-width: 500px; margin: auto; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 20px; max-width: 500px; margin: auto; background-color: #f4f4f9; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h2 { color: #333; text-align: center; margin-top: 0; }
         .input-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; }
-        input { width: 100%; padding: 8px; box-sizing: border-box; }
-        button { width: 100%; padding: 10px; background-color: #28a745; color: white; border: none; cursor: pointer; }
-        button:disabled { background-color: #ccc; }
-        #status { margin-top: 15px; padding: 10px; display: none; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; color: #555; }
+        input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-bottom: 10px; }
+        #submitBtn { background-color: #007bff; color: white; }
+        #submitBtn:hover { background-color: #0056b3; }
+        #submitBtn:disabled { background-color: #ccc; }
+        .secondary-btn { background-color: #6c757d; color: white; text-decoration: none; display: block; text-align: center; line-height: 1.2; }
+        #status { margin-top: 15px; padding: 12px; border-radius: 8px; display: none; text-align: center; font-weight: bold; }
     </style>
 </head>
 <body>
-    <h2>米線傳送</h2>
-    
-    <div class="input-group">
-        <label for="shopName">店名：</label>
-        <input type="text" id="shopName" placeholder="例如：譚仔">
-    </div>
-    
-    <div class="input-group">
-        <label for="price">價錢：</label>
-        <input type="number" id="price" placeholder="例如：55">
-    </div>
+    <div class="card">
+        <h2>🍜 米線數據傳送</h2>
+        
+        <div class="input-group">
+            <label for="shopName">店名：</label>
+            <input type="text" id="shopName" placeholder="例如：譚仔三哥" list="shop-list">
+            <datalist id="shop-list">
+                <option value="譚仔">
+                <option value="譚仔三哥">
+                <option value="雲桂香">
+            </datalist>
+        </div>
+        
+        <div class="input-group">
+            <label for="price">價錢 ($)：</label>
+            <input type="number" id="price" placeholder="輸入金額" inputmode="decimal">
+        </div>
 
-    <button id="submitBtn">傳送到 Google Sheet</button>
-    <div id="status"></div>
+        <button id="submitBtn">傳送到 Google Sheet</button>
+        <div id="status"></div>
+        
+        <a href="https://docs.google.com/spreadsheets/" target="_blank" class="secondary-btn" style="padding: 12px; border-radius: 8px; font-size: 14px;">開啟 Google Sheet 檢查</a>
+    </div>
 
     <script>
-        // 呢度已經更新咗你提供嘅新 URL
+        // 已經更新為你提供的新 API URL
         const API_URL = 'https://script.google.com/macros/s/AKfycbwY1fu9g3om-VhxdKcGxuEne-pgGZQkndDlqH1bifgaZ1_McT8xtkbKmKVuyau823wT6g/exec';
 
         document.getElementById('submitBtn').addEventListener('click', async () => {
@@ -41,32 +55,41 @@
             const btn = document.getElementById('submitBtn');
 
             if (!shopName || !price) {
-                alert('請填寫完整數據');
+                alert('請填寫完整數據呀！');
                 return;
             }
 
             btn.disabled = true;
             statusDiv.style.display = 'block';
             statusDiv.innerText = '傳送中...';
-            statusDiv.style.backgroundColor = '#fff3cd';
+            statusDiv.style.backgroundColor = '#e2f0fe';
+            statusDiv.style.color = '#007bff';
 
             try {
-                // 使用 no-cors 模式解決跨網域問題
+                // 使用 no-cors 模式確保傳送成功
                 await fetch(API_URL, {
                     method: 'POST',
                     mode: 'no-cors',
                     cache: 'no-cache',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ shopName, price, timestamp: new Date().toLocaleString() })
+                    body: JSON.stringify({ 
+                        shopName, 
+                        price, 
+                        timestamp: new Date().toLocaleString('zh-HK', { timeZone: 'Asia/Hong_Kong' }) 
+                    })
                 });
 
-                statusDiv.innerText = '傳送成功！(請檢查 Google Sheet)';
+                statusDiv.innerText = '✅ 傳送成功！(請檢查 Excel)';
                 statusDiv.style.backgroundColor = '#d4edda';
+                statusDiv.style.color = '#155724';
+                
+                // 清空輸入框
                 document.getElementById('shopName').value = '';
                 document.getElementById('price').value = '';
             } catch (error) {
-                statusDiv.innerText = '傳送出錯，請檢查設定。';
+                statusDiv.innerText = '❌ 出錯咗，請檢查網路或設定。';
                 statusDiv.style.backgroundColor = '#f8d7da';
+                statusDiv.style.color = '#721c24';
                 console.error(error);
             } finally {
                 btn.disabled = false;
