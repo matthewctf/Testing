@@ -3,227 +3,220 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>餐飲營運 AI 診斷 V1</title>
+    <title>數據中樞 V2.5 Multi-Event</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --p: #007aff; --s: #34c759; --bg: #f5f5f7; --card-bg: rgba(255,255,255,0.8); }
-        body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro HK", sans-serif; background: var(--bg); padding: 20px; margin: 0; color: #1d1d1f; -webkit-font-smoothing: antialiased; }
-        
-        /* Apple 風格版本號 */
-        .v-tag { position: fixed; top: 15px; left: 20px; font-size: 11px; color: rgba(0,0,0,0.3); font-weight: 600; z-index: 100; letter-spacing: 1px; }
-
-        .grid { max-width: 1100px; margin: 50px auto auto; display: grid; grid-template-columns: 2fr 3fr; gap: 20px; }
-        .card { background: var(--card-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); padding: 25px; border-radius: 20px; box-shadow: 0 8px 30px rgba(0,0,0,0.05); border: 1px solid rgba(255,255,255,0.3); transition: 0.3s; }
-        .card:hover { box-shadow: 0 12px 40px rgba(0,0,0,0.08); }
-        .full { grid-column: span 2; }
-        
-        h2 { font-size: 1.1rem; font-weight: 600; color: #000; margin: 0 0 20px 0; display: flex; justify-content: space-between; align-items: center; }
-        
-        /* 控制區域 */
-        .ctrl-group { margin-bottom: 20px; }
-        label { display: block; font-size: 0.85rem; font-weight: 500; color: #86868b; margin-bottom: 8px; }
-        input[type=range] { width: 100%; -webkit-appearance: none; background: transparent; }
-        input[type=range]::-webkit-slider-runnable-track { background: #e0e0e2; height: 6px; border-radius: 3px; }
-        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 20px; width: 20px; background: var(--p); border-radius: 50%; margin-top: -7px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 2px solid white; transition: 0.2s; }
-        input[type=range]::-webkit-slider-thumb:active { transform: scale(1.1); }
-        
-        select { width: 100%; padding: 12px; border: 1px solid #d2d2d7; border-radius: 10px; background: white; font-size: 1rem; -webkit-appearance: none; }
-
-        /* 流動數字 (Ticker) */
-        .ticker { font-size: 2.2rem; font-weight: 700; color: var(--p); letter-spacing: -1px; transition: 0.5s ease-out; display: inline-block; }
-        
-        /* 圖表區域 */
-        .charts-container { display: grid; grid-template-columns: 2fr 1fr; gap: 15px; }
-        .chart-box { background: white; padding: 15px; border-radius: 12px; border: 1px solid #e5e5e7; height: 180px; position: relative; }
-        
-        /* 診斷與指令 */
-        #risk { color: #ff3b30; font-weight: bold; }
-        #promptBox { background: rgba(0,0,0,0.03); padding: 15px; border-radius: 12px; font-size: 0.9rem; color: #515154; border-left: 4px solid var(--s); line-height: 1.5; margin-top: 15px; }
-        button { width: 100%; padding: 16px; background: var(--s); color: white; border: none; border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: 0.2s; }
-        button:active { transform: scale(0.98); opacity: 0.9; }
-
-        /* 手機適配 */
-        @media (max-width: 900px) { .grid { grid-template-columns: 1fr; margin-top: 40px; } .charts-container { grid-template-columns: 1fr; } .full { grid-column: span 1; } }
+        :root { --p: #007aff; --bg: #000; --glass: rgba(255, 255, 255, 0.08); --border: 1px solid rgba(255,255,255,0.2); }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); color: #fff; margin: 0; padding-bottom: 50px; }
+        .nav { max-width: 1300px; margin: 20px auto; padding: 0 20px; display: flex; gap: 10px; }
+        .nav-item { cursor: pointer; padding: 10px 20px; border-radius: 10px; background: var(--glass); border: var(--border); font-size: 0.85rem; }
+        .nav-item.active { background: var(--p); border-color: var(--p); }
+        .dashboard { max-width: 1300px; margin: 0 auto; display: grid; grid-template-columns: 350px 1fr; gap: 20px; padding: 0 20px; }
+        .card { background: var(--glass); backdrop-filter: blur(20px); border-radius: 24px; padding: 20px; border: var(--border); margin-bottom: 20px; }
+        .status-pill { padding: 5px 15px; border-radius: 20px; font-weight: 900; font-size: 0.85rem; }
+        .bg-green { background: #34c759; color: #000; }
+        .bg-orange { background: #ff9500; color: #000; }
+        .bg-red { background: #ff3b30; color: #fff; }
+        .chart-box { background: rgba(255,255,255,0.03); padding: 20px; border-radius: 20px; border: var(--border); margin-bottom: 30px; }
+        .analysis-box { margin-top: 15px; padding: 15px; background: rgba(0,122,255,0.05); border-radius: 12px; font-size: 0.85rem; line-height: 1.6; border-left: 5px solid var(--p); color: #ddd; }
+        .egg-text { font-size: 0.75rem; color: #ffcc00; font-style: italic; margin-top: 5px; min-height: 18px; }
+        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-top: 10px; }
+        .cal-day { padding: 10px 2px; border-radius: 8px; background: rgba(255,255,255,0.05); font-size: 0.7rem; text-align: center; position: relative; }
+        .cal-event { background: #ffcc00; color: #000; font-weight: bold; border: 1px solid #fff; }
+        .cal-rest { background: #ff3b30; color: #fff; }
+        input, textarea { background: rgba(255,255,255,0.1); border: var(--border); color: #fff; padding: 12px; border-radius: 10px; width: 100%; box-sizing: border-box; margin-bottom: 10px; }
+        .val-tag { color: var(--p); font-weight: bold; }
+        .ai-btn { width: 100%; padding: 16px; background: #fff; color: #000; border: none; border-radius: 16px; font-weight: 900; cursor: pointer; }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-<div class="v-tag">VERSION V1.0.0</div>
+<div class="nav">
+    <div class="nav-item active" onclick="switchTab('main')">📈 數據診斷與趨勢</div>
+    <div class="nav-item" onclick="switchTab('sets')">⚙️ 系統設定</div>
+</div>
 
-<div class="grid">
-    <div class="card">
-        <h2>📊 數據模擬中心</h2>
-        
-        <div class="ctrl-group">
-            <label>預計時段</label>
-            <select id="time" onchange="updateAll()">
-                <option value="breakfast">早餐市 (07:00-11:00)</option>
-                <option value="lunch" selected>午餐高峰 (12:00-14:30)</option>
-                <option value="tea">下午茶 (15:00-17:30)</option>
-                <option value="dinner">晚市繁忙 (18:30-22:00)</option>
-            </select>
+<div id="tab-main" class="dashboard">
+    <div class="left-col">
+        <div class="card" style="border: 2px solid rgba(255,255,255,0.1);">
+            <h3 style="margin-top:0;">🚀 營運模擬核心</h3>
+            <div style="padding:15px; background:rgba(255,255,255,0.03); border-radius:15px; border:var(--border);">
+                <label style="font-size:0.75rem; color:#888;">小時人流模擬</label>
+                <input type="range" id="flowIn" min="0" max="200" value="80" oninput="updateAll()">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+                    <span style="font-size:2rem; font-weight:900;" id="flowNum">80</span>
+                    <span id="flowStatus" class="status-pill">載入中</span>
+                </div>
+                <div id="easterEgg" class="egg-text"></div>
+            </div>
+            <p style="font-size:0.75rem; color:#666; margin:15px 0 5px;">📍 想追問 AI 的特定問題：</p>
+            <textarea id="aiQuest" rows="3" placeholder="例如：我想喺演唱會期間增加外賣員人手，可行嗎？"></textarea>
+            <button class="ai-btn" onclick="openAI()">📋 獲取診斷指令</button>
         </div>
 
-        <div class="ctrl-group">
-            <label>人流模擬</label>
-            <div class="ticker" id="flowVal">0</div><span style="color:var(--p); font-weight:bold; margin-left:5px;">人</span>
-            <input type="range" id="flow" min="20" max="500" value="150" oninput="animateNumber('flowVal', this.value); updateCharts();">
-        </div>
-        
-        <div class="ctrl-group">
-            <label>現場壓力值</label>
-            <div class="ticker" id="stressVal">0</div><span style="color:var(--p); font-weight:bold; margin-left:5px;">/10</span>
-            <input type="range" id="stress" min="1" max="10" value="6" oninput="animateNumber('stressVal', this.value); updateCharts();">
+        <div class="card" style="border: 1px solid rgba(255,59,48,0.3);">
+            <div style="font-size:0.9rem; font-weight:bold;">🗓️ 多場演唱會 & 休息安排</div>
+            <div id="calWhy" style="font-size:0.75rem; color:var(--p); margin:10px 0;"></div>
+            <div class="cal-grid" id="calGrid"></div>
+            <div style="font-size:0.6rem; margin-top:10px; color:#888;">🟡: 演唱會期間 (共 <span id="eventCount">0</span> 日) | 🔴: 建議休息</div>
         </div>
     </div>
 
-    <div class="card full">
-        <h2>📈 營運即時看板 (互動式)</h2>
-        <div class="charts-container">
-            <div class="chart-box">
-                <canvas id="waveChart"></canvas>
-            </div>
-            <div style="display:grid; grid-template-rows: 1fr 1fr; gap:10px;">
-                <div class="chart-box" style="height:85px;"><canvas id="gaugeChart"></canvas></div>
-                <div class="chart-box" style="height:85px;"><canvas id="donutChart"></canvas></div>
-            </div>
+    <div class="right-col">
+        <div class="chart-box">
+            <div style="height:320px;"><canvas id="cGlobal"></canvas></div>
+            <div class="analysis-box" id="anaGlobal"></div>
+        </div>
+        <div class="chart-box">
+            <div style="height:250px;"><canvas id="c1"></canvas></div>
+            <div class="analysis-box" id="ana1"></div>
+        </div>
+        <div class="chart-box">
+            <div style="height:250px;"><canvas id="c2"></canvas></div>
+            <div class="analysis-box" id="ana2"></div>
+        </div>
+        <div class="chart-box">
+            <div style="height:250px;"><canvas id="c6"></canvas></div>
+            <div class="analysis-box" id="ana6"></div>
         </div>
     </div>
+</div>
 
-    <div class="card full">
-        <h2>📋 50字內 AI 精華指令</h2>
-        <div id="promptBox">正在根據波動數據生成最佳指令...</div>
-        <button onclick="copyPrompt()">📋 一鍵複製並問 Gemini</button>
+<div id="tab-sets" class="dashboard hidden">
+    <div class="card" style="grid-column: span 2;">
+        <h3>⚙️ 全局數據與事件設定</h3>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:30px;">
+            <div>
+                <label>平均每日收入 (基準): <span class="val-tag" id="v_target"></span></label>
+                <input type="range" id="dailyRev" min="5000" max="100000" step="1000" value="30000" oninput="updateAll()">
+                <label>每日固定成本: <span class="val-tag" id="v_fixed"></span></label>
+                <input type="range" id="dailyFixed" min="1000" max="25000" step="500" value="8500" oninput="updateAll()">
+                <label>外賣佔比 (%): <span class="val-tag" id="v_deliv"></span></label>
+                <input type="range" id="delivRate" min="0" max="80" value="25" oninput="updateAll()">
+                <label>外賣平台抽成 (%): <span class="val-tag" id="v_fee"></span></label>
+                <input type="range" id="delivFee" min="20" max="40" value="30" oninput="updateAll()">
+            </div>
+            <div>
+                <p style="color:#ffcc00; font-weight:bold;">🎤 演唱會日程表</p>
+                <label>活動日期 (如 1,2,3,15,16,17):</label>
+                <input type="text" id="eventDays" value="1,2,3,15,16,17" oninput="updateAll()">
+                <label>演唱會/活動描述:</label>
+                <textarea id="concertNames" rows="3">1-3號: 周杰倫; 15-17號: 陳奕迅</textarea>
+                <p style="font-size:0.7rem; color:#666;">* 輸入日期後日曆會即時更新。</p>
+            </div>
+        </div>
     </div>
 </div>
 
 <script>
-    // 1. 初始化圖表 (設定 Apple 風格)
-    Chart.defaults.font.family = '-apple-system, sans-serif';
-    Chart.defaults.color = '#86868b';
+    function switchTab(t) {
+        document.getElementById('tab-main').classList.toggle('hidden', t!=='main');
+        document.getElementById('tab-sets').classList.toggle('hidden', t!=='sets');
+        document.querySelectorAll('.nav-item').forEach(el=>el.classList.toggle('active', el.innerText.includes(t==='main'?'📈':'系統')));
+    }
 
-    // 圖表 1: 波動型人流圖
-    const waveCtx = document.getElementById('waveChart').getContext('2d');
-    const waveGradient = waveCtx.createLinearGradient(0, 0, 0, 180);
-    waveGradient.addColorStop(0, 'rgba(0, 122, 255, 0.3)');
-    waveGradient.addColorStop(1, 'rgba(0, 122, 255, 0)');
-
-    let waveChart = new Chart(waveCtx, {
-        type: 'line',
-        data: { labels: [], datasets: [{ label: '即時人流', data: [], borderColor: '#007aff', borderWidth: 3, pointBackgroundColor: '#fff', pointBorderWidth: 2, pointRadius: 4, pointHoverRadius: 7, fill: true, backgroundColor: waveGradient, tension: 0.4 }] },
-        options: { 
-            maintainAspectRatio: false, 
-            plugins: { legend: { display: false }, tooltip: { enabled: false } }, // 禁用預設 Tooltip，使用自定義
-            scales: { y: { beginAtZero: true, grid: { color: '#f0f0f2' } }, x: { grid: { display: false } } },
-            onClick: (e, items) => { if(items.length > 0) showTooltip(items[0]); } // 撳圖表觸發彈窗
-        }
+    const chartOpt = (t, isLegend=false) => ({
+        responsive:true, maintainAspectRatio:false,
+        plugins:{ title:{ display:true, text:t, color:'#fff', font:{size:16, weight:'bold'} }, legend:{display:isLegend, labels:{color:'#888', font:{size:10}}} },
+        scales:{ x:{ ticks:{color:'#888', font:{size:10}} }, y:{ ticks:{color:'#888', font:{size:10}}, grid:{color:'rgba(255,255,255,0.05)'} } }
     });
 
-    // 圖表 2: 壓力盤
-    let gaugeChart = new Chart(document.getElementById('gaugeChart'), {
-        type: 'doughnut',
-        data: { datasets: [{ data: [60, 40], backgroundColor: ['#ff3b30', '#e5e5e7'], borderRange: 0, circumference: 180, rotation: 270 }] },
-        options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: '80%' }
-    });
+    const cGlobal = new Chart(document.getElementById('cGlobal'), { type:'line', data:{ labels:['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'], datasets:[{ label:'預估每月純利 ($)', data:[], borderColor:'#34c759', tension:0.4, fill:false },{ label:'年度累積預測 ($)', data:[], borderColor:'#007aff', tension:0.4, fill:true, backgroundColor:'rgba(0,122,255,0.1)', yAxisID:'y1' }] }, options:chartOpt('動態盈虧趨勢預測', true) });
+    cGlobal.options.scales.y1 = { position:'right', grid:{drawOnChartArea:false}, ticks:{color:'#007aff'} };
 
-    // 圖表 3: 翻台率
-    let donutChart = new Chart(document.getElementById('donutChart'), {
-        type: 'doughnut',
-        data: { labels: ['已翻台', '待翻台'], datasets: [{ data: [70, 30], backgroundColor: ['#34c759', '#e5e5e7'] }] },
-        options: { maintainAspectRatio: false, plugins: { legend: { display: false } } }
-    });
+    const c1 = new Chart(document.getElementById('c1'), { type:'line', data:{ labels:['10:30','13:00','15:30','18:00','20:30','22:30'], datasets:[{ data:[], borderColor:'#007aff', fill:true, backgroundColor:'rgba(0,122,255,0.1)', tension:0.4 }] }, options:chartOpt('24小時人流分布壓力') });
+    const c2 = new Chart(document.getElementById('c2'), { type:'line', data:{ labels:['10:30','13:00','15:30','18:00','20:30','22:30'], datasets:[{ data:[], borderColor:'#af52de', tension:0.4 }] }, options:chartOpt('即時翻枱效率') });
+    const c6 = new Chart(document.getElementById('c6'), { type:'bar', data:{ labels:['今日營收','固定成本','外賣抽成','預估純利'], datasets:[{ data:[], backgroundColor:['#34c759','#8e8e93','#ff3b30','#007aff'] }] }, options:chartOpt('今日盈虧即時分析') });
 
-    // 2. 數據波動邏輯與圖表更新
-    function updateCharts() {
-        const flow = parseInt(document.getElementById('flow').value);
-        const time = document.getElementById('time').value;
-        const stress = document.getElementById('stress').value;
-
-        // 生成真實時間波動數據
-        let labels = [], data = [];
-        let baseTime, peaks;
-
-        if(time === 'lunch') { baseTime = 12; peaks = [12.5, 13.0]; labels = ['12:00', '12:30', '13:00', '13:30', '14:00']; }
-        else if(time === 'dinner') { baseTime = 18; peaks = [19.0, 20.0]; labels = ['18:30', '19:00', '19:30', '20:00', '20:30', '21:00']; }
-        else { baseTime = 8; peaks = [9.0]; labels = ['08:00', '08:30', '09:00', '09:30', '10:00']; }
-
-        // 生成波動曲線 (根據高峰時間)
-        labels.forEach((t, i) => {
-            let hour = baseTime + i*0.5;
-            let multiplier = 1 + 0.3 * Math.sin(i * 1.5); // 基礎波動
-            peaks.forEach(p => { if(Math.abs(hour - p) < 0.6) multiplier += 0.4; }); // 加強高峰
-            data.push(Math.round(flow * multiplier * (1 + (Math.random()-0.5)*0.1))); // 加入隨機噪點
-        });
-
-        // 更新人流圖
-        waveChart.data.labels = labels;
-        waveChart.data.datasets[0].data = data;
-        waveChart.update('active');
-
-        // 更新壓力盤與翻台圖
-        gaugeChart.data.datasets[0].data = [stress*10, 100-stress*10];
-        gaugeChart.update();
-
-        let turnRate = Math.max(10, 90 - (flow/50)*10);
-        donutChart.data.datasets[0].data = [turnRate, 100-turnRate];
-        donutChart.update();
-
-        // 更新精華 Prompt
-        const shortPrompt = `我是餐廳顧問。數據：${labels[0]}-${labels[labels.length-1]}時段、波動人數${flow}、壓力${stress}/10。請用30字給出最致命風險及一個反敗為勝策略。`;
-        document.getElementById('promptBox').innerText = shortPrompt;
-    }
-
-    // 3. Apple 風格數字流動動畫
-    function animateNumber(id, finalValue) {
-        const el = document.getElementById(id);
-        const startValue = parseInt(el.innerText);
-        if(startValue === finalValue) return;
-        
-        let duration = 300; // 動畫時長 (毫秒)
-        let startTime = null;
-
-        function step(timestamp) {
-            if (!startTime) startTime = timestamp;
-            let progress = timestamp - startTime;
-            let current = Math.round(startValue + (finalValue - startValue) * (progress / duration));
-            el.innerText = current;
-            if (progress < duration) {
-                window.requestAnimationFrame(step);
-            } else {
-                el.innerText = finalValue; // 確保最後數值準確
-            }
-        }
-        window.requestAnimationFrame(step);
-    }
-
-    // 4. 自定義圖表彈窗 (Tooltip)
-    function showTooltip(item) {
-        const index = item.index;
-        const time = waveChart.data.labels[index];
-        const count = waveChart.data.datasets[0].data[index];
-        
-        // 簡單嘅營運建議邏輯
-        let advice = count > 200 ? "🚨 建議外賣限流，確保堂食" : "🛠️ 檢查預製菜存量，準備高峰";
-
-        // 用 alert 模擬 Apple 風格彈窗 (正式版可以用自定義 DIV)
-        alert(`⏰ 時間：${time}\n📊 人數：${count} 人\n💡 建議：${advice}`);
-    }
-
-    function copyPrompt() {
-        navigator.clipboard.writeText(document.getElementById('promptBox').innerText).then(() => {
-            alert("✅ 指令已複製！請貼到 Gemini。");
-        });
-    }
-
-    // 5. 初始化
     function updateAll() {
-        animateNumber('flowVal', document.getElementById('flow').value);
-        animateNumber('stressVal', document.getElementById('stress').value);
-        updateCharts();
+        const flow = parseInt(document.getElementById('flowIn').value);
+        const dailyRev = parseInt(document.getElementById('dailyRev').value);
+        const fixed = parseInt(document.getElementById('dailyFixed').value);
+        const delivR = parseInt(document.getElementById('delivRate').value) / 100;
+        const delivF = parseInt(document.getElementById('delivFee').value) / 100;
+        const eDaysRaw = document.getElementById('eventDays').value;
+        const eDays = eDaysRaw.split(',').map(d => parseInt(d.trim())).filter(d => !isNaN(d));
+        const cDesc = document.getElementById('concertNames').value;
+
+        document.getElementById('flowNum').innerText = flow;
+        document.getElementById('v_target').innerText = '$' + dailyRev.toLocaleString();
+        document.getElementById('v_fixed').innerText = '$' + fixed.toLocaleString();
+        document.getElementById('v_deliv').innerText = (delivR*100) + '%';
+        document.getElementById('v_fee').innerText = (delivF*100) + '%';
+        document.getElementById('eventCount').innerText = eDays.length;
+
+        // 彩蛋
+        const egg = document.getElementById('easterEgg');
+        egg.innerText = flow < 15 ? "店長拍緊烏蠅，烏蠅都話要移民。" : (flow > 180 ? "排隊排到去紅館，廚房火都熄唔到！" : "");
+
+        const st = document.getElementById('flowStatus');
+        if(flow < 45) { st.innerText="🔵 鬆動"; st.className="status-pill bg-green"; }
+        else if(flow < 95) { st.innerText="🟡 理想"; st.className="status-pill bg-orange"; }
+        else { st.innerText="🔴 飽和"; st.className="status-pill bg-red"; }
+
+        // 運算
+        const delivCost = dailyRev * delivR * delivF;
+        const foodCost = dailyRev * 0.35;
+        const dailyProfit = dailyRev - fixed - foodCost - delivCost;
+
+        // 趨勢圖：波浪演算法
+        const mBase = dailyProfit * 30;
+        const wave = [0.8, 0.7, 1.1, 1.3, 0.9, 0.8, 1.2, 1.5, 0.95, 1.1, 1.3, 1.6];
+        const mData = wave.map(f => mBase * f + (Math.random() - 0.5) * mBase * 0.1);
+        let cum = 0; const cData = mData.map(v => { cum += v; return cum; });
+        cGlobal.data.datasets[0].data = mData; 
+        cGlobal.data.datasets[1].data = cData; 
+        cGlobal.update();
+
+        document.getElementById('anaGlobal').innerHTML = `
+            <b>【解釋】</b>基於當前純利 \$${Math.round(dailyProfit)} 推算的年度盈利波段。<br>
+            <b>【分析】</b>波浪反映市場旺淡市（如2月淡季，12月旺季）。預計年收利潤 \$${Math.round(cum).toLocaleString()}。<br>
+            <b>【判斷】</b>${cum < 0 ? '<b>[警報]</b> 支出結構過重，年度預期虧損！' : '盈利能力健康，累積資產穩定向上。'}<br>
+            <b>【改善】</b>建議將旺季利潤的 30% 留存，用作填補淡季的波谷位。
+        `;
+
+        const fData = [flow*0.4, flow*1.2, flow*0.6, flow*1.7, flow*1.1, flow*0.4];
+        c1.data.datasets[0].data = fData; c1.update();
+        document.getElementById('ana1').innerHTML = `<b>【分析】</b>小時人流最高達 ${Math.round(flow*1.7)} 人。<b>【判斷】</b>晚市壓力極大，需專人負責分流。`;
+
+        const tData = fData.map(v=>(v/50).toFixed(1));
+        c2.data.datasets[0].data = tData; c2.update();
+        document.getElementById('ana2').innerHTML = `<b>【分析】</b>翻枱率峰值 ${Math.max(...tData)}x。<b>【判斷】</b>${Math.max(...tData)>1.2?'座位利用率極佳。':'座位閒置率高。'}`;
+
+        c6.data.datasets[0].data = [dailyRev, fixed, delivCost, dailyProfit]; c6.update();
+        document.getElementById('ana6').innerHTML = `<b>【分析】</b>外賣抽成佔每日 \$${Math.round(delivCost)}。<b>【改善】</b>外賣比重過高會侵蝕純利，應推廣堂食優惠。`;
+
+        // 日曆
+        const cal = document.getElementById('calGrid'); cal.innerHTML = '';
+        for(let i=1; i<=30; i++) {
+            const day = document.createElement('div');
+            const isE = eDays.includes(i);
+            const isR = !isE && (i % 7 === 2 || i % 7 === 3);
+            day.className = 'cal-day' + (isE ? ' cal-event' : (isR ? ' cal-rest' : ''));
+            day.innerText = i; cal.appendChild(day);
+        }
+        document.getElementById('calWhy').innerText = `本月演唱會：${cDesc}。🟡日子嚴禁請假。`;
+    }
+
+    function openAI() {
+        const basePrompt = `【數據診斷報告】
+- 日收基準: $${document.getElementById('dailyRev').value}
+- 固定成本: $${document.getElementById('dailyFixed').value}
+- 模擬人流: ${document.getElementById('flowIn').value}
+- 外賣佔比: ${document.getElementById('delivRate').value}%
+- 診斷分析：翻枱率與純利表現。
+- 可能做錯的地方：${document.getElementById('dailyFixed').value > 15000 ? '固定支出過高' : '外賣抽成侵蝕利潤'}。
+--------------------------
+【追問特定問題】:
+${document.getElementById('aiQuest').value || '請根據以上數據提供營運優化建議。'}`;
+        
+        navigator.clipboard.writeText(basePrompt).then(() => {
+            alert("診斷指令已複製！即將跳轉 Gemini。");
+            window.open("https://gemini.google.com/app", "_blank");
+        });
     }
     updateAll();
-
 </script>
-
 </body>
 </html>
