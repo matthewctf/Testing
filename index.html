@@ -3,93 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>餐廳人流 AI 預測模擬器</title>
+    <title>餐廳人流 AI 預測模擬器 - Pro 版</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: -apple-system, sans-serif; padding: 20px; max-width: 600px; margin: auto; background-color: #f4f7f6; }
-        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h2 { color: #2c3e50; text-align: center; }
-        .input-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; font-weight: bold; color: #34495e; }
-        select, input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
-        button { width: 100%; padding: 15px; background-color: #3498db; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        button:hover { background-color: #2980b9; }
-        button:disabled { background-color: #bdc3c7; cursor: not-allowed; }
-        #aiResponse { margin-top: 25px; padding: 20px; border-radius: 10px; background-color: #ebf5fb; border-left: 6px solid #3498db; display: none; }
-        #responseText { color: #2c3e50; line-height: 1.6; white-space: pre-wrap; }
-        .loading-spinner { display: inline-block; width: 20px; height: 20px; border: 3px solid rgba(255,255,255,.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s ease-in-out infinite; margin-right: 10px; vertical-align: middle; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        :root { --primary: #2563eb; --bg: #f8fafc; --card: #ffffff; }
+        body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); padding: 20px; color: #1e293b; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 1200px; margin: auto; }
+        .card { background: var(--card); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        h2 { margin-top: 0; color: var(--primary); font-size: 1.25rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
+        .input-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        button:hover { opacity: 0.9; }
+        #aiOutput { background: #f1f5f9; padding: 15px; border-radius: 8px; min-height: 100px; white-space: pre-wrap; margin-top: 10px; border-left: 4px solid var(--primary); }
+        .chart-container { position: relative; height: 250px; width: 100%; }
+        @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
+
+<div class="grid">
     <div class="card">
-        <h2>📊 餐廳人流 AI 預測</h2>
-        
+        <h2>📊 模擬器控制台</h2>
         <div class="input-group">
-            <label>預測時段：</label>
+            <label>模擬時段</label>
             <select id="timeSlot">
-                <option value="平日午餐高峰">平日午餐高峰 (12:00 - 14:00)</option>
-                <option value="週末晚餐高峰">週末晚餐高峰 (18:00 - 21:00)</option>
-                <option value="下午茶閒暇時段">下午茶時段 (15:00 - 17:30)</option>
-                <option value="深夜宵夜時段">深夜宵夜時段 (22:00 打後)</option>
+                <option value="早餐">早餐 (07-11)</option>
+                <option value="午餐高峰">午餐高峰 (12-14)</option>
+                <option value="下午茶">下午茶 (15-17)</option>
+                <option value="晚餐高峰">晚餐高峰 (18-21)</option>
             </select>
         </div>
-
         <div class="input-group">
-            <label>外部因素分析：</label>
-            <input type="text" id="factors" placeholder="例如：黃色暴雨警告、附近商場有活動、加推8折優惠">
+            <label>外部因素 (天氣/活動)</label>
+            <input type="text" id="factors" placeholder="例如：颱風、外賣8折、附近演唱會">
         </div>
+        <div class="input-group">
+            <label>基礎人流設定</label>
+            <input type="number" id="baseFlow" value="50">
+        </div>
+        <button onclick="runSimulation()">執行模擬 & 同步數據</button>
+    </div>
 
-        <button id="submitBtn">開始 AI 模擬預測</button>
-
-        <div id="aiResponse">
-            <strong style="color: #2980b9; display: block; margin-bottom: 10px;">🤖 真 AI 分析結果：</strong>
-            <div id="responseText"></div>
+    <div class="card">
+        <h2>📈 即時人流趨勢預測</h2>
+        <div class="chart-container">
+            <canvas id="flowChart"></canvas>
         </div>
     </div>
 
-    <script>
-        // ⚠️ 記得換返你條 Web App URL
-        const API_URL = 'https://script.google.com/macros/s/AKfycbwY1fu9g3om-VhxdKcGxuEne-pgGZQkndDlqH1bifgaZ1_McT8xtkbKmKVuyau823wT6g/exec';
+    <div class="card" style="grid-column: span 2;">
+        <h2>🤖 AI 即時分析中心 (尖銳意見/解決方案)</h2>
+        <div id="aiOutput">等待數據輸入中... AI 將會針對你的場景提出尖銳挑戰及對策。</div>
+        
+        <div class="input-group" style="margin-top: 20px;">
+            <label>直接向 AI 提問：</label>
+            <textarea id="aiQuestion" rows="2" placeholder="問 AI 關於呢個模擬場景嘅問題..."></textarea>
+        </div>
+        <button onclick="askAI()" style="background: #059669;">發送尖銳問題</button>
+    </div>
+</div>
 
-        document.getElementById('submitBtn').addEventListener('click', async () => {
-            const timeSlot = document.getElementById('timeSlot').value;
-            const factors = document.getElementById('factors').value;
-            const btn = document.getElementById('submitBtn');
-            const responseDiv = document.getElementById('aiResponse');
-            const responseText = document.getElementById('responseText');
+<script>
+    // ⚠️ 請換成你自己的 Google Script URL
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwY1fu9g3om-VhxdKcGxuEne-pgGZQkndDlqH1bifgaZ1_McT8xtkbKmKVuyau823wT6g/exec';
 
-            if (!factors) { alert('請輸入一啲外部因素等 AI 做分析呀！'); return; }
+    // 初始化圖表
+    const ctx = document.getElementById('flowChart').getContext('2d');
+    let flowChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['1小時前', '現在', '預測1hr後', '預測2hr後'],
+            datasets: [{ label: '人流量', data: [30, 50, 0, 0], borderColor: '#2563eb', fill: true, backgroundColor: 'rgba(37,99,235,0.1)' }]
+        },
+        options: { maintainAspectRatio: false }
+    });
 
-            // UI 狀態更新
-            btn.disabled = true;
-            btn.innerHTML = '<div class="loading-spinner"></div> AI 正在思考中...';
-            responseDiv.style.display = 'none';
+    async function runSimulation() {
+        const data = {
+            timeSlot: document.getElementById('timeSlot').value,
+            factors: document.getElementById('factors').value,
+            baseFlow: document.getElementById('baseFlow').value,
+            type: "simulate"
+        };
 
-            try {
-                // 傳送數據
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    mode: 'no-cors', // 用 no-cors 確保數據一定能送出
-                    body: JSON.stringify({
-                        timeSlot: timeSlot,
-                        factors: factors
-                    })
-                });
+        // 更新圖表預測 (模擬前端即時反應)
+        let prediction = Math.round(data.baseFlow * (1 + (Math.random() * 0.5)));
+        flowChart.data.datasets[0].data = [Math.random()*40, data.baseFlow, prediction, prediction * 1.2];
+        flowChart.update();
 
-                // 因為 no-cors 讀唔到 return 值，但我哋可以去 Google Sheet 睇
-                // 如果你想喺網頁睇，需要 GAS 做複雜嘅 JSONP 處理，
-                // 目前最穩陣係話俾用家知成功送出，請去 Sheet 睇結果。
-                responseDiv.style.display = 'block';
-                responseText.innerHTML = "✅ <b>數據已傳送到後端！</b><br>由於瀏覽器安全限制，請直接開啟你的 <b>Google Sheet</b> 查看 AI 生成的詳細預測報告。";
-                
-            } catch (error) {
-                responseDiv.style.display = 'block';
-                responseText.innerText = "❌ 傳送出錯，請檢查 API 設定。";
-            } finally {
-                btn.disabled = false;
-                btn.innerText = '開始 AI 模擬預測';
-            }
-        });
-    </script>
+        document.getElementById('aiOutput').innerText = "AI 正在進行深度分析與挑剔中...";
+        sendToGAS(data);
+    }
+
+    async function askAI() {
+        const question = document.getElementById('aiQuestion').value;
+        if(!question) return;
+        document.getElementById('aiOutput').innerText = "AI 正在針對你的問題撰寫解決方案...";
+        sendToGAS({ question: question, type: "ask" });
+    }
+
+    async function sendToGAS(payload) {
+        try {
+            await fetch(SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify(payload)
+            });
+            alert("數據已同步至雲端，請檢查 Google Sheet 查看最新 AI 報告。");
+        } catch (e) {
+            console.error(e);
+        }
+    }
+</script>
 </body>
 </html>
