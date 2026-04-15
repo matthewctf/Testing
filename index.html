@@ -3,118 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>餐廳人流 AI 預測模擬器 - Pro 版</title>
+    <title>餐廳人流 AI 預測模擬器</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --primary: #2563eb; --bg: #f8fafc; --card: #ffffff; }
-        body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); padding: 20px; color: #1e293b; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 1200px; margin: auto; }
-        .card { background: var(--card); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-        h2 { margin-top: 0; color: var(--primary); font-size: 1.25rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
-        .input-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: 600; }
-        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        button:hover { opacity: 0.9; }
-        #aiOutput { background: #f1f5f9; padding: 15px; border-radius: 8px; min-height: 100px; white-space: pre-wrap; margin-top: 10px; border-left: 4px solid var(--primary); }
-        .chart-container { position: relative; height: 250px; width: 100%; }
-        @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+        :root { --primary: #1e293b; --accent: #2563eb; --bg: #f8fafc; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); padding: 15px; margin: 0; }
+        .grid { max-width: 1000px; margin: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .full { grid-column: span 2; }
+        h2 { font-size: 1rem; color: var(--accent); margin-top: 0; border-bottom: 2px solid var(--bg); padding-bottom: 8px; }
+        .input-group { margin-bottom: 12px; }
+        label { display: block; font-size: 0.85rem; font-weight: bold; margin-bottom: 4px; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 5px; }
+        #aiBox { margin-top: 15px; padding: 15px; background: #f1f5f9; border-left: 4px solid var(--accent); min-height: 80px; white-space: pre-wrap; font-size: 0.9rem; }
+        .chart-wrap { height: 220px; }
+        @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } .full { grid-column: span 1; } }
     </style>
 </head>
 <body>
 
 <div class="grid">
     <div class="card">
-        <h2>📊 模擬器控制台</h2>
+        <h2>📊 數據輸入</h2>
         <div class="input-group">
-            <label>模擬時段</label>
-            <select id="timeSlot">
-                <option value="早餐">早餐 (07-11)</option>
-                <option value="午餐高峰">午餐高峰 (12-14)</option>
-                <option value="下午茶">下午茶 (15-17)</option>
-                <option value="晚餐高峰">晚餐高峰 (18-21)</option>
-            </select>
+            <label>時段</label>
+            <select id="time"><option>早餐</option><option>午餐</option><option>下午茶</option><option>晚餐</option></select>
         </div>
         <div class="input-group">
-            <label>外部因素 (天氣/活動)</label>
-            <input type="text" id="factors" placeholder="例如：颱風、外賣8折、附近演唱會">
+            <label>外部因素</label>
+            <input type="text" id="factors" placeholder="例如：落大雨、新店開張">
         </div>
         <div class="input-group">
-            <label>基礎人流設定</label>
-            <input type="number" id="baseFlow" value="50">
+            <label>預計人流</label>
+            <input type="number" id="base" value="80">
         </div>
-        <button onclick="runSimulation()">執行模擬 & 同步數據</button>
+        <button onclick="run()">執行模擬</button>
     </div>
 
     <div class="card">
-        <h2>📈 即時人流趨勢預測</h2>
-        <div class="chart-container">
-            <canvas id="flowChart"></canvas>
-        </div>
+        <h2>📈 即時圖表</h2>
+        <div class="chart-wrap"><canvas id="myChart"></canvas></div>
     </div>
 
-    <div class="card" style="grid-column: span 2;">
-        <h2>🤖 AI 即時分析中心 (尖銳意見/解決方案)</h2>
-        <div id="aiOutput">等待數據輸入中... AI 將會針對你的場景提出尖銳挑戰及對策。</div>
-        
-        <div class="input-group" style="margin-top: 20px;">
-            <label>直接向 AI 提問：</label>
-            <textarea id="aiQuestion" rows="2" placeholder="問 AI 關於呢個模擬場景嘅問題..."></textarea>
-        </div>
-        <button onclick="askAI()" style="background: #059669;">發送尖銳問題</button>
+    <div class="card full">
+        <h2>🤖 AI 尖銳意見 & 即時分享區</h2>
+        <div id="aiBox">等待指令...</div>
+        <textarea id="ask" rows="2" style="margin-top:15px" placeholder="追問 AI 解決方案..."></textarea>
+        <button onclick="askAI()" style="background:#059669">獲取 AI 解決方案</button>
     </div>
 </div>
 
 <script>
-    // ⚠️ 請換成你自己的 Google Script URL
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwY1fu9g3om-VhxdKcGxuEne-pgGZQkndDlqH1bifgaZ1_McT8xtkbKmKVuyau823wT6g/exec';
+    // ⚠️ 記得喺下面貼返你部署後嗰條 Web App URL
+    const URL = 'https://script.google.com/macros/s/AKfycbzEuVpIhXA4mTj7hlZys7Zf5Ik8-MCPEWpt9QMSiBlFJwwKvfVLKflfZYL8geeZgC_2DQ/exec';
 
-    // 初始化圖表
-    const ctx = document.getElementById('flowChart').getContext('2d');
-    let flowChart = new Chart(ctx, {
+    const ctx = document.getElementById('myChart').getContext('2d');
+    let chart = new Chart(ctx, {
         type: 'line',
-        data: {
-            labels: ['1小時前', '現在', '預測1hr後', '預測2hr後'],
-            datasets: [{ label: '人流量', data: [30, 50, 0, 0], borderColor: '#2563eb', fill: true, backgroundColor: 'rgba(37,99,235,0.1)' }]
-        },
+        data: { labels: ['-1h', '現在', '+1h', '+2h'], datasets: [{ label: '模擬人流', data: [0,0,0,0], borderColor: '#2563eb', tension: 0.3 }] },
         options: { maintainAspectRatio: false }
     });
 
-    async function runSimulation() {
-        const data = {
-            timeSlot: document.getElementById('timeSlot').value,
-            factors: document.getElementById('factors').value,
-            baseFlow: document.getElementById('baseFlow').value,
-            type: "simulate"
-        };
-
-        // 更新圖表預測 (模擬前端即時反應)
-        let prediction = Math.round(data.baseFlow * (1 + (Math.random() * 0.5)));
-        flowChart.data.datasets[0].data = [Math.random()*40, data.baseFlow, prediction, prediction * 1.2];
-        flowChart.update();
-
-        document.getElementById('aiOutput').innerText = "AI 正在進行深度分析與挑剔中...";
-        sendToGAS(data);
+    async function run() {
+        const val = document.getElementById('base').value;
+        chart.data.datasets[0].data = [val*0.7, val, val*1.4, val*1.2];
+        chart.update();
+        call({ type: "simulate", timeSlot: document.getElementById('time').value, factors: document.getElementById('factors').value, baseFlow: val });
     }
 
     async function askAI() {
-        const question = document.getElementById('aiQuestion').value;
-        if(!question) return;
-        document.getElementById('aiOutput').innerText = "AI 正在針對你的問題撰寫解決方案...";
-        sendToGAS({ question: question, type: "ask" });
+        const q = document.getElementById('ask').value;
+        if(q) call({ type: "ask", question: q });
     }
 
-    async function sendToGAS(payload) {
+    async function call(payload) {
+        document.getElementById('aiBox').innerText = "AI 正在思考中...";
         try {
-            await fetch(SCRIPT_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                body: JSON.stringify(payload)
-            });
-            alert("數據已同步至雲端，請檢查 Google Sheet 查看最新 AI 報告。");
-        } catch (e) {
-            console.error(e);
-        }
+            await fetch(URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+            document.getElementById('aiBox').innerHTML = "✅ <b>數據已同步！</b><br>由於瀏覽器安全限制，請即時查看 <b>Google Sheet</b> 獲取 AI 的尖銳報告。";
+        } catch (e) { alert("出錯，請檢查 URL"); }
     }
 </script>
 </body>
