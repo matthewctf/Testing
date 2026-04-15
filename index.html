@@ -3,111 +3,106 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>餐廳營運 AI 診斷助手</title>
+    <title>極簡餐飲 AI 診斷</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --primary: #2563eb; --secondary: #059669; --bg: #f1f5f9; }
-        body { font-family: 'PingFang HK', sans-serif; background: var(--bg); padding: 20px; color: #1e293b; }
-        .container { max-width: 800px; margin: auto; }
-        .card { background: white; padding: 25px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin-bottom: 20px; }
-        h2 { font-size: 1.2rem; margin-top: 0; display: flex; align-items: center; gap: 10px; color: var(--primary); }
-        label { display: block; font-size: 0.9rem; font-weight: 600; margin: 10px 0 5px; }
-        input, select, textarea { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 1rem; box-sizing: border-box; }
-        button { width: 100%; padding: 15px; border: none; border-radius: 10px; font-size: 1rem; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 15px; }
-        .btn-main { background: var(--primary); color: white; }
-        .btn-main:hover { background: #1d4ed8; }
-        .btn-copy { background: var(--secondary); color: white; display: none; }
-        #promptDisplay { 
-            background: #f8fafc; border: 2px dashed #cbd5e1; padding: 20px; border-radius: 12px; 
-            margin-top: 20px; white-space: pre-wrap; display: none; font-size: 0.95rem; line-height: 1.6;
-        }
-        .badge { background: #dbeafe; color: #1e40af; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; }
+        :root { --p: #2563eb; --s: #059669; --bg: #f8fafc; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); padding: 15px; margin: 0; }
+        .grid { max-width: 800px; margin: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .full { grid-column: span 2; }
+        h2 { font-size: 1rem; color: var(--p); margin: 0 0 15px 0; display: flex; justify-content: space-between; }
+        
+        /* 滑動條樣式 */
+        input[type=range] { width: 100%; margin: 10px 0; cursor: pointer; }
+        .val-display { font-weight: bold; color: var(--p); font-size: 1.2rem; }
+        
+        /* 準備地方與分析 */
+        .insights { display: flex; gap: 10px; margin-top: 10px; }
+        .insight-tag { flex: 1; background: #eff6ff; padding: 10px; border-radius: 8px; font-size: 0.8rem; border: 1px solid #dbeafe; }
+        
+        /* 50字內精華 Prompt */
+        #promptBox { background: #f1f5f9; padding: 12px; border-radius: 8px; font-size: 0.9rem; color: #334155; border-left: 4px solid var(--s); line-height: 1.4; min-height: 40px; }
+        button { width: 100%; padding: 12px; background: var(--s); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } .full { grid-column: span 1; } }
     </style>
 </head>
 <body>
 
-<div class="container">
+<div class="grid">
     <div class="card">
-        <h2>📊 營運數據輸入</h2>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-            <div>
-                <label>模擬時段</label>
-                <select id="timeSlot">
-                    <option>早市 (07:00-11:00)</option>
-                    <option>午市 (12:00-14:30)</option>
-                    <option>下午茶 (15:00-17:30)</option>
-                    <option>晚市 (18:30-22:00)</option>
-                </select>
-            </div>
-            <div>
-                <label>預計人流 (人)</label>
-                <input type="number" id="baseFlow" value="100">
-            </div>
-        </div>
+        <h2>📊 數據模擬 <span class="val-display" id="flowVal">100</span>人</h2>
+        <label>人流預測</label>
+        <input type="range" id="flow" min="10" max="300" value="100" oninput="updateAll()">
         
-        <label>當前外部因素 (如天氣、活動、修路)</label>
-        <input type="text" id="factors" placeholder="例如：黃色暴雨警告、對面商場開張">
+        <label>營運壓力 (1-10)</label>
+        <input type="range" id="stress" min="1" max="10" value="5" oninput="updateAll()">
         
-        <label>你有特別想問 AI 的問題嗎？ (可選)</label>
-        <textarea id="customQuestion" rows="2" placeholder="例如：我想知道如何減少這段時間的食材浪費..."></textarea>
-        
-        <button class="btn-main" onclick="generateDiagnostic()">✨ 生成專業 AI 診斷指令</button>
+        <select id="time" onchange="updateAll()" style="margin-top:10px; width:100%; padding:8px; border-radius:5px;">
+            <option>早餐時段</option><option>午餐高峰</option><option>晚市繁忙</option>
+        </select>
     </div>
 
-    <div class="card" id="resultCard" style="display:none;">
-        <h2>🤖 已準備好診斷指令 <span class="badge">Step 2: 複製並貼上</span></h2>
-        <div id="promptDisplay"></div>
-        <button id="copyBtn" class="btn-copy" onclick="copyToClipboard()">📋 點擊複製指令 (然後去 Gemini)</button>
-        <p style="text-align:center; font-size:0.85rem; color:#64748b; margin-top:15px;">
-            複製後請前往 <a href="https://gemini.google.com" target="_blank" style="color:var(--primary)">Gemini</a> 或 <a href="https://chatgpt.com" target="_blank" style="color:var(--primary)">ChatGPT</a> 貼上即可。
-        </p>
+    <div class="card">
+        <h2>📈 人流趨勢預測</h2>
+        <div style="height: 120px;"><canvas id="chart"></canvas></div>
+    </div>
+
+    <div class="card full">
+        <h2>⚡ 即時診斷與準備事項</h2>
+        <div class="insights">
+            <div class="insight-tag"><b>🚨 致命傷：</b><br><span id="risk">計算中...</span></div>
+            <div class="insight-tag"><b>🛠️ 準備位：</b><br><span id="prep">計算中...</span></div>
+            <div class="insight-tag"><b>💡 考慮點：</b><br><span id="think">計算中...</span></div>
+        </div>
+    </div>
+
+    <div class="card full">
+        <h2>📋 50字 AI 精華指令</h2>
+        <div id="promptBox">請移動滑桿生成指令...</div>
+        <button onclick="copyPrompt()">📋 一鍵複製並問 Gemini</button>
     </div>
 </div>
 
 <script>
-    function generateDiagnostic() {
-        const time = document.getElementById('timeSlot').value;
-        const flow = document.getElementById('baseFlow').value;
-        const factors = document.getElementById('factors').value || "常規營運狀態";
-        const question = document.getElementById('customQuestion').value;
+    const ctx = document.getElementById('chart').getContext('2d');
+    let chart = new Chart(ctx, {
+        type: 'line',
+        data: { labels: ['前', '現', '後'], datasets: [{ label: '人流', data: [80, 100, 120], borderColor: '#2563eb', tension: 0.4 }] },
+        options: { maintainAspectRatio: false, plugins: { legend: { display: false } } }
+    });
 
-        // 動態組裝全新的專業 Prompt
-        let prompt = `你現在是一位專精於餐飲數據分析與現場調度的「毒舌營運顧問」。\n\n`;
-        prompt += `【當前營運場景數據】\n`;
-        prompt += `- 經營時段：${time}\n`;
-        prompt += `- 預期人流：${flow} 人次\n`;
-        prompt += `- 關鍵外部變數：${factors}\n\n`;
+    function updateAll() {
+        const flow = document.getElementById('flow').value;
+        const stress = document.getElementById('stress').value;
+        const time = document.getElementById('time').value;
         
-        prompt += `【你的任務】\n`;
-        prompt += `1. **深度風險評估**：針對上述時段與因素，指出三個最可能導致虧損或客訴的致命隱患。\n`;
-        prompt += `2. **應對策略**：提供一個具體、可立即執行的「反敗為勝」營運方案。\n`;
-        prompt += `3. **翻台率預測**：根據 ${flow} 人的流量，分析這對餐廳的出餐壓力與周轉率有何影響。\n`;
+        document.getElementById('flowVal').innerText = flow;
 
-        if (question) {
-            prompt += `\n【用戶特別追問】\n針對以下問題提供額外的精確建議：${question}\n`;
-        }
+        // 1. 更新圖表
+        chart.data.datasets[0].data = [flow * 0.7, flow, flow * 1.2];
+        chart.update();
 
-        prompt += `\n請使用繁體中文，保持專業、尖銳且務實的語氣，不要給出廢話。`;
-
-        // 顯示結果
-        const display = document.getElementById('promptDisplay');
-        display.innerText = prompt;
-        display.style.display = 'block';
-        document.getElementById('resultCard').style.display = 'block';
-        document.getElementById('copyBtn').style.display = 'block';
+        // 2. 即時動態分析邏輯
+        const riskText = flow > 200 ? "出餐癱瘓" : (stress > 7 ? "員工崩潰" : "食材損耗");
+        const prepText = flow > 200 ? "增加2人手" : "檢查預製菜";
+        const thinkText = "考慮翻台率是否過低";
         
-        // 自動捲動到底部
-        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        document.getElementById('risk').innerText = riskText;
+        document.getElementById('prep').innerText = prepText;
+        document.getElementById('think').innerText = thinkText;
+
+        // 3. 生成 50 字精華 Prompt
+        const shortPrompt = `我是餐廳顧問。數據：${time}、${flow}人、壓力${stress}/10。請用30字給出最致命風險及一個反敗為勝策略。`;
+        document.getElementById('promptBox').innerText = shortPrompt;
     }
 
-    function copyToClipboard() {
-        const text = document.getElementById('promptDisplay').innerText;
-        navigator.clipboard.writeText(text).then(() => {
-            alert("✅ 指令已成功複製！\n現在你可以直接去 Gemini 貼上詢問了。");
-        }).catch(err => {
-            alert("複製失敗，請手動全選複製。");
-        });
+    function copyPrompt() {
+        navigator.clipboard.writeText(document.getElementById('promptBox').innerText);
+        alert("指令已複製！請貼到 Gemini。");
     }
+
+    updateAll(); // 初始化
 </script>
 
 </body>
